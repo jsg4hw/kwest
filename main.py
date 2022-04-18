@@ -15,77 +15,77 @@ class Kwest(object):
                  students=[],trips={},top_trips=[],trip_capacity=20,
                  gender_avg=None,program_avg=None,country_avg=None,
                  matches=[],final_match=None):
-
+        
         self.input_fpath = input_fpath
         self.output_fpath = output_fpath
-
+        
         self.df_input = df_input
         self.df_clean = df_clean
         self.df_final = df_final
-
+        
         self.df_fit = df_fit
         self.fit_x = fit_x
         self.fit_y = fit_y
-
+        
         self.df_pred = df_pred
         self.pred_x = pred_x
         self.pred_y = pred_y
-
+        
         self.students = students
         self.trips = trips
         self.top_trips = top_trips
         self.trip_capacity = trip_capacity
-
+        
         self.gender_avg = gender_avg
         self.program_avg = program_avg
         self.country_avg = country_avg
-
+        
         self.matches = matches
         self.final_match = final_match
-
+        
         self._read_input()
         self._clean_data()
-
+        
         self._generate_students()
         self._generate_trips()
-
+        
         self._pick_top_trips()
         self._wrangle_data()
-
+    
     def _read_input(self):
         self.df_input = pd.read_excel(self.input_fpath,dtype=str)
-
+    
     def _clean_data(self):
         df = self.df_input[[
             'Netid','Gender','Program','Date of Birth','Passport Country',
             'Sig Other Coming','Sig Other Kellogg Student',
         ]+['Vote'+str(i+1) for i in range(10)]]
-
+        
         df.columns = ['net_id','gender','program','dob','country','sig other coming','sig other kellogg student']+['trip'+str(i+1) for i in range(10)]
-        df['jv_coming'] = df.apply(lambda x: 1 if ((x['sig other coming']=='T') & (x['sig other kellogg student']=='F')) else 0, axis=1)
+        df.loc[:,'jv_coming'] = df.apply(lambda x: 1 if ((x['sig other coming']=='T') & (x['sig other kellogg student']=='F')) else 0, axis=1)
         self.df_clean = df.set_index('net_id').drop(['sig other coming','sig other kellogg student'],axis=1)
-
+        
     def _wrangle_data(self):
         df = self.df_clean.drop(['dob'],axis=1) # DOB is null for all students in test data set
         df.gender = df.gender.apply(lambda x: 1 if x=='F' else 0)
         df.program = df.program.apply(lambda x: 1 if x=='2YMBA' else 0)
         df.country = df.country.apply(lambda x: 1 if x=='UNITED STATES' else 0)
-
+        
         fit = pd.melt(
             df.reset_index(drop=False),
             id_vars=['net_id','gender','country','program','jv_coming'],
             value_vars=['trip'+str(i+1) for i in range(10)],
             var_name='vote',value_name='trip').dropna()
         fit.vote = fit.vote.str.replace('trip','').astype(int)
-
+                
         netid_trips = list(product(df.index.tolist(), self.trips))
         # 1. df of all net id and trip name combinations
         # 2. join to find which trips have already been voted on
         # 3. join to pull student attribute data
         pred = pd.DataFrame(netid_trips,columns=['net_id','trip'])\
             .merge(fit[['net_id','trip','vote']],on=['net_id','trip'],how='left')\
-            .merge(df.reset_index(drop=False)[['net_id','gender','country','program','jv_coming']],on=['net_id'],how='inner')
-
+            .merge(df.reset_index(drop=False)[['net_id','gender','country','program','jv_coming']],on=['net_id'],how='inner') 
+        
         fit = fit.join(pd.get_dummies(fit.trip)).drop(labels=['trip'],axis=1).reset_index(drop=True)
         fit.index.name = 'row_num'
         fit = fit.reset_index(drop=False).set_index(['row_num','net_id'])
@@ -93,7 +93,7 @@ class Kwest(object):
         self.df_fit = fit
         self.fit_x = fit.drop(['vote'],axis=1)
         self.fit_y = fit.vote
-
+        
         pred = pred.loc[(pred.vote.isnull()) & (pred.trip.isin(self.top_trips))]
         pred = pred.join(pd.get_dummies(pred.trip)).drop(labels=['trip','vote'],axis=1).reset_index(drop=True)
         pred.index.name = 'row_num'
@@ -105,12 +105,12 @@ class Kwest(object):
         pred = pred[cols_pred]
         self.df_pred = pred
         self.pred_x = pred
-
+    
     def _generate_students(self):
         students = []
         rows = self.df_clean.reset_index(drop=False).to_dict('records')
         trips = ['trip'+str(i+1) for i in range(10)]
-
+        
         for student in rows:
             votes = []
             for trip in trips:
@@ -120,7 +120,7 @@ class Kwest(object):
             student['votes'] = votes
             students.append(Student(**student))
         self.students = students
-
+        
         total = len(students)
         gender = 0
         program = 0
@@ -135,15 +135,15 @@ class Kwest(object):
         self.gender_avg = (gender/total)
         self.program_avg = (program/total)
         self.country_avg = (country/total)
-
+    
     def _generate_trips(self):
         cols = ['trip'+str(i+1) for i in range(10)]
         df = self.df_clean[cols]
-
+        
         trips = [df[i].tolist() for i in cols]
         trips = set([t for trip in trips for t in trip if str(t) != 'nan'])
         self.trips = trips
-
+    
     def _pick_top_trips(self):
         cushion = 0
         trip_goers = 0
@@ -154,13 +154,13 @@ class Kwest(object):
                 trip_goers+=1
         min_capacity,max_capacity = 14,20
         min_trips,max_trips = (ceil(trip_goers/max_capacity)),(ceil(trip_goers/min_capacity))
-
+        
         votes = []
         for student in self.students:
             votes+=student.votes
         top_trips = pd.Series(votes).value_counts()[:min_trips+cushion].index.tolist()
         self.top_trips = top_trips
-
+    
     def predict(self):
         knn = KNeighborsRegressor(n_neighbors=5)
         knn.fit(self.fit_x, self.fit_y)
@@ -168,11 +168,11 @@ class Kwest(object):
         pred_y = pd.DataFrame(pred_y,columns=['vote'])
         pred_y.index.name = 'row_num'
         self.pred_y = pred_y
-
+        
         fit = self.df_fit
         pred = self.pred_x.join(pred_y,on=['row_num'],how='inner')
         final = pd.concat([fit,pred])
-
+        
         final = pd.melt(
             final.reset_index(drop=False).drop(['row_num'],axis=1),
             id_vars=['net_id','gender','country','program','jv_coming','vote'],
@@ -180,7 +180,7 @@ class Kwest(object):
         )
         final = final.loc[(final.value==1) & (final.trip.isin(self.top_trips))].drop(['value'],axis=1)
         self.df_final = final
-
+            
     def match(self,runs=10):
         matches = []
         student_mapper = {student.net_id:student for student in self.students}
@@ -191,10 +191,10 @@ class Kwest(object):
             student.preferences = prefs
             student_preferences[student.net_id] = prefs
             if student.jv_coming == 1:
-                student_preferences[student.net_id+'JV'] = prefs
-
-        net_ids_with_jvs = student_preferences.keys()
-
+                student_preferences[student.net_id+'JV'] = prefs        
+        
+        net_ids_w_jvs = list(student_preferences.keys())
+        
         for run in range(runs):
             trip_preferences = {}
             for trip in self.top_trips:
@@ -208,7 +208,7 @@ class Kwest(object):
                             net_ids_w_jvs.pop(net_ids_w_jvs.index(net_id))
                         )
                 trip_preferences[trip] = net_ids_w_jvs
-
+                
             match = {
                 'iteration': str(run+1),
                 'student_mapper': student_mapper,
@@ -221,14 +221,14 @@ class Kwest(object):
             }
             matches.append(Match(**match))
         self.matches = matches
-
+    
     def pick(self):
         best = self.matches[0]
         for match in self.matches:
             if match.error < best.error:
                 best = match
         self.final_match = best
-
+        
         print("""
         Iteration: {}
         Corrections: {}
@@ -244,7 +244,7 @@ class Kwest(object):
             print(trip.size,len(trip.students),sum([1 for student in trip.students if student.jv_coming==1]))
             print([student.net_id for student in trip.students])
             print('')
-
+        
         output = []
         for name,trip in self.final_match.trips.items():
             output.append([name]+[student.net_id for student in trip.students])
@@ -259,24 +259,24 @@ class Match(object):
         self.iteration = iteration
         self.student_mapper = student_mapper
         self.student_preferences = student_preferences
-
+        
         self.trip_preferences = trip_preferences
         self.trip_capacity = trip_capacity
-
+        
         self.gender_avg = gender_avg
         self.program_avg = program_avg
         self.country_avg = country_avg
-
+        
         self.solution = solution
         self.trips = trips
-
+        
         self.corrections = corrections
         self.error = error
-
+        
         self._solve()
         self._correct()
         self.score()
-
+    
     def _solve(self):
         trip_capacity = {trip:self.trip_capacity for trip in self.trip_preferences.keys()}
         game = HospitalResident.create_from_dictionaries(
@@ -287,7 +287,7 @@ class Match(object):
         solution = game.solve(optimal='resident')
         self.solution = solution
         trips = {}
-
+        
         for trip,students in solution.items():
             _trip = {
                 'name': trip.name,
@@ -302,7 +302,7 @@ class Match(object):
                     _trip['students'].append(self.student_mapper[student.name])
             trips[trip.name] = (Trip(**_trip))
         self.trips = trips
-
+    
     def _correct(self):
         corrections = 0
         for name,trip in self.trips.items():
@@ -320,7 +320,7 @@ class Match(object):
                         break
                 i+=1
         self.corrections = corrections
-
+    
     def score(self):
         error = 0
         for trip in self.trips.values():
@@ -335,20 +335,20 @@ class Trip(object):
         self.name = name
         self.students = students
         self.capacity = capacity
-
+        
         self.gender_avg = gender_avg
         self.program_avg = program_avg
         self.country_avg = country_avg
-
+        
         self.size = size
         self.error = error
-
+        
         self.gender_dist = gender_dist
         self.program_dist = program_dist
         self.country_dist = country_dist
-
+        
         self.score()
-
+    
     def score(self):
         size = 0
         gender = 0
@@ -365,7 +365,7 @@ class Trip(object):
                 program+=1
             if student.country=='UNITED STATES':
                 country+=1
-
+        
         self.size = size
         self.gender_dist = (gender/size)
         self.program_dist = (program/size)
@@ -387,7 +387,6 @@ class Student(object):
         self.jv_coming = jv_coming
         self.votes = votes
         self.preferences = preferences
-
 
 INPUT_FPATH = os.path.join(os.getcwd(),'data.xlsx')
 OUTPUT_FPATH = os.path.join(os.getcwd(),'output.csv')
