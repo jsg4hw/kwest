@@ -2,8 +2,7 @@
 Code to match Kellogg students to a KWEST trip based on submitted preferences.
 
 #### ToDo
-1. Create 'none' weight for top trips
-1. Fix the 'any' preference prediction
+1. N/A
 
 #### Steps
 1. Execute `run.sh` shell file
