@@ -24,18 +24,25 @@ Code to match Kellogg students to a KWEST trip based on submitted preferences.
     - Central object for orchestration
     - Methods
         - `setup` - cleans imported data, creates students and trips
-            - `trip_capacity` parameter - sets the max number of students that can be assigned in a trip
+            - Parameters
+                - `trip_capacity` - sets the max number of students that can be assigned in a trip
         - `predict` - predicts preferences for trips that a student didn't vote on
-            - `weight` parameter - 
-                - `none` - each trip vote is assigned 1 point
-                - `linear` - trips are weighted based on vote rank, where rank 1 received 10 points and rank 10 receives 1 point
-                - `exponential` - trip votes are weighted based on vote rank, where rank 1 receives exp(1) and rank 10 received exp(0.1)
-            - `preference` parameter - 
-                - `stated` - stated preferences are preferred to predicted
-                - `any` - stated and predicted preferences are treated equally
+            - Parameters
+                - `weight` - designates how the trip score field is calculated
+                    - Options
+                        - `none` - each trip vote is assigned 1 point
+                        - `linear` - trips are weighted based on vote rank, where rank 1 received 10 points and rank 10 receives 1 point
+                        - `exponential` - trip votes are weighted based on vote rank, where rank 1 receives exp(1) and rank 10 received exp(0.1)
+                - `preference` - designates how trips are ranked
+                    - Options
+                        - `stated` - stated preferences are preferred to predicted
+                        - `any` - stated and predicted preferences are treated equally
         - `match` - generates a solution to the trip assignment problem
-            - `runs` parameter - the number of potential trip assignment solutions to generate
+            - Parameters
+                - `runs` - the number of potential trip assignment solutions to generate
         - `pick` - chooses the best match iteration based on match preference
-            - `preference` parameter
-                - `match` - chooses match with least "mismatches" or cases where an assigned trip was not in stated preferences
-                - `demographics` - chooses match with trips that have demographics that align most closely with population demographics
+            - Parameters
+                - `preference` - designates on what metric a best match is selected
+                    - Options
+                        - `match` - chooses match with least "mismatches" or cases where an assigned trip was not in stated preferences
+                        - `demographics` - chooses match with trips that have demographics that align most closely with population demographics
