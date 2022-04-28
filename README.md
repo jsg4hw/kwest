@@ -22,17 +22,22 @@ Code to match Kellogg students to a KWEST trip based on submitted preferences.
 #### Documentation
 - `Kwest`
     - Central object for orchestration
+    - Parameters
+        - `trip_capacity` - sets the max number of students that can be assigned in a trip
     - Methods
         - `setup` - cleans imported data, creates students and trips
             - Parameters
-                - `trip_capacity` - sets the max number of students that can be assigned in a trip
-        - `predict` - predicts preferences for trips that a student didn't vote on
-            - Parameters
-                - `weight` - designates how the trip score field is calculated
+                - `weight` - designates how the list of top trips is decided
                     - Options
                         - `none` - each trip vote is assigned 1 point
                         - `linear` - trips are weighted based on vote rank, where rank 1 received 10 points and rank 10 receives 1 point
                         - `exponential` - trip votes are weighted based on vote rank, where rank 1 receives exp(1) and rank 10 received exp(0.1)
+        - `predict` - predicts preferences for trips that a student didn't vote on
+            - Parameters
+                - `weight` - designates how the trip score field is calculated
+                    - Options
+                        - `linear` - trip score is based on vote rank, where rank 1 received 10 points and rank 10 receives 1 point
+                        - `exponential` - trip score is based on exponentiated vote rank, where rank 1 receives exp(1) and rank 10 received exp(0.1)
                 - `preference` - designates how trips are ranked
                     - Options
                         - `stated` - stated preferences are preferred to predicted
