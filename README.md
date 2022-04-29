@@ -40,7 +40,7 @@ Code to match Kellogg students to a KWEST trip based on submitted preferences.
                 - `preference` - designates how trips are ranked
                     - Options
                         - `stated` - stated preferences are preferred to predicted
-                        - `any` - stated and predicted preferences are treated equally
+                        - `score` - stated and predicted preferences are treated equally
         - `match` - generates a solution to the trip assignment problem
             - Parameters
                 - `runs` - the number of potential trip assignment solutions to generate
@@ -48,5 +48,6 @@ Code to match Kellogg students to a KWEST trip based on submitted preferences.
             - Parameters
                 - `preference` - designates on what metric a best match is selected
                     - Options
-                        - `match` - chooses match with least "mismatches" or cases where an assigned trip was not in stated preferences
+                        - `mismatches` - chooses match with least "mismatches" or cases where an assigned trip was not in stated preferences
                         - `demographics` - chooses match with trips that have demographics that align most closely with population demographics
+                        - `score` - chooses match with the highest sum of calulated student scores for trips
