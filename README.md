@@ -22,6 +22,7 @@ Code to match Kellogg students to a KWEST trip based on submitted preferences.
 - `Kwest`
     - Central object for orchestration
     - Parameters
+        - `cushion` - sets the number of additional trips selection in order to have free spots for reassignment flexibility
         - `trip_capacity` - sets the min and max range of students that can be assigned in a trip
     - Methods
         - `setup` - cleans imported data, creates students and trips
