@@ -288,7 +288,7 @@ class Kwest(object):
         
         output = []
         for name,trip in self.final_match.trips.items():
-            output.append([name]+[student.net_id for student in trip.students])
+            output.append([name]+[student.net_id for student in trip.students]+[student.net_id+’JV’ for student in trip.students of student.jv_coming==1])
         pd.DataFrame(output).to_csv(self.output_fpath,header=False,index=False)
 
 
