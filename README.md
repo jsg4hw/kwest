@@ -10,7 +10,7 @@ Code to match Kellogg students to a KWEST trip based on submitted preferences.
 #### Methodology
 1. Import data
 1. Eliminate unpopular trips based on student input
-1. Predict missing trip preferences using `K-Nearest Neighbors Regression Algorithm`
+1. Predict missing trip preferences using `Random Forest Regression Algorithm`
 1. Generate potential trip matches using `Hospital-Resident Matching Algorithm`
 1. Pick match based on provided score metrics
 1. Write output to CSV file
